@@ -116,7 +116,7 @@ pipeline {
                 docker run -d \
                 --name ${CONTAINER_NAME} \
                 -p 3000:3000 \
-                ${DOCKER_REPO}:latest
+                ${DOCKER_REPO}:${BUILD_NUMBER}
                 '''
             }
         }
