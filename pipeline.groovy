@@ -16,7 +16,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/mayurmwagh/node-demo-app.git'
+                    url: 'https://github.com/mayurmwagh/node-app.git'
             }
         }
 
