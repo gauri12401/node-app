@@ -1,0 +1,147 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'NodeJS-20'
+    }
+
+    environment {
+        IMAGE_NAME = "node-demo-app"
+        DOCKER_REPO = "mayurmwagh/node-demo-app"
+        CONTAINER_NAME = "node-demo-container"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/mayurmwagh/node-demo-app.git'
+            }
+        }
+
+        stage('Verify Environment') {
+            steps {
+                sh '''
+                echo "Node Version:"
+                node -v
+
+                echo "NPM Version:"
+                npm -v
+
+                echo "Docker Version:"
+                docker --version
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                '''
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Tag Docker Image') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} \
+                    $DOCKER_USER/node-demo-app:${BUILD_NUMBER}
+
+                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} \
+                    $DOCKER_USER/node-demo-app:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                    docker push $DOCKER_USER/node-demo-app:${BUILD_NUMBER}
+                    docker push $DOCKER_USER/node-demo-app:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                sh '''
+                docker rm -f ${CONTAINER_NAME} || true
+
+                docker run -d \
+                --name ${CONTAINER_NAME} \
+                -p 3000:3000 \
+                ${DOCKER_REPO}:latest
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                docker ps
+                '''
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo 'Pipeline Executed Successfully'
+        }
+
+        failure {
+            echo 'Pipeline Failed'
+        }
+
+        always {
+            cleanWs()
+        }
+    }
+}
