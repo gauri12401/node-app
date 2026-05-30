@@ -1,0 +1,13 @@
+{
+  "name": "node-demo-app",
+  "version": "1.0.0",
+  "description": "NodeJS Demo Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/app.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
