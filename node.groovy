@@ -1,8 +1,10 @@
 pipeline {
     agent any
+    
     tools {
-        nodejs 'NodeJS-20'
+        node 'NodeJS-20'
     }
+
     environment {
         IMAGE_NAME = "node-demo-app"
         DOCKER_REPO = "mayurmwagh/node-demo-sample"
