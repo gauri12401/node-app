@@ -19,6 +19,15 @@ pipeline {
                     url: 'https://github.com/mayurmwagh/node-app.git'
             }
         }
+        stage('Debug') {
+             steps {
+                sh '''
+                    whoami
+                    groups
+                    ls -l /var/run/docker.sock
+                '''
+            }
+        }
     
         stage('Verify Environment') {
             steps {
