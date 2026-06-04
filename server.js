@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("Welcome to NodeJS CI/CD Pipeline Demo");
+    res.send("welcome to NGP");
 });
 
 app.get("/health", (req, res) => {
