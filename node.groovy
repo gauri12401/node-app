@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'node-new'
+    }
     
     tools {
         nodejs 'NodeJS-20'
