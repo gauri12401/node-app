@@ -75,6 +75,14 @@ pipeline{
             }
             }
         }
+        stage('Deployment'){
+            sh '
+                docker run -d \
+                --name node-container \  
+                -p 3000:3000 \
+                ${DOCKER_REPO}/${IMAGE_NAME}:${BUILD_NUMBER}
+            '
+        }
     }
 }
 
