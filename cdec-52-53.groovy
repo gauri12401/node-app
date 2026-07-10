@@ -70,7 +70,7 @@ pipeline{
                     docker tag ${DOCKER_REPO}:${BUILD_NUMBER} \
                     ${DOCKER_REPO}/${IMAGE_NAME}:${BUILD_NUMBER}
 
-                    Docker push ${DOCKER_REPO}/${IMAGE_NAME}:${BUILD_NUMBER}
+                    docker push ${DOCKER_REPO}/${IMAGE_NAME}:${BUILD_NUMBER}
                 '''
             }
             }
