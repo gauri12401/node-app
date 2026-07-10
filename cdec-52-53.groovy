@@ -4,6 +4,7 @@ pipeline{
     }
     environment {
         DOCKER_REPO = "mayurwagh"
+        DOCKER_USER = "node-app"
         IMAGE_NAME = "node-app"
     }
     stages {
@@ -44,8 +45,44 @@ pipeline{
                 ''' 
             }
         }
+        stage('Docker login'){
+            steps{
+               withCredentials([
+                        usernamePassword(
+                            credentialsId: 'docker-hub-creds',
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )
+                    ]) 
+                    {
+                        sh 'docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
+                    }
+                }
+            }
+        stage('Docker push'){
+            steps{
+               withCredentials([
+                        usernamePassword(
+                            credentialsId: 'docker-hub-creds',
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )
+                    ]) 
+                    {
+                        sh '''
+                            docker tag ${DOCKER_REPO}:${BUILD_NUMBER} \
+                            ${DOCKER_REPO}/${DOCKER_USER}:${BUILD_NUMBER}
+
+                            docker push ${DOCKER_REPO}/${DOCKER_USER}:${BUILD_NUMBER}
+                        '''
+                    }
+                }
+            }
+        }
     }
-}
+
+
+
 
 
 
