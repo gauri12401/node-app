@@ -63,7 +63,7 @@ app.get("/", (req, res) => {
         </head>
         <body>
             <div class="container">
-                <h1>🚀 CloudBlitz DevOps CI/CD Demo</h1>
+                <h1>🚀 CloudBlitz DevOps CI/CD Integration Testing Demo</h1>
                 <h2>Welcome to the Application!</h2>
 
                 <p>
