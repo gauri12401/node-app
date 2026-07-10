@@ -7,7 +7,7 @@ app.get("/", (req, res) => {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>CloudBlitz DevOps Demo</title>
+            <title>CloudBlitz DevOps CICD Integration Demo</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
