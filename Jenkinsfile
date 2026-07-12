@@ -5,22 +5,12 @@ pipeline {
     }
 
     environment {
-
         DOCKER_USER = "gauri128"
         DOCKER_REPO = "node-app"
-        IMAGE_NAME = "${DOCKER_USER}/${DOCKER_REPO}"
         CONTAINER_NAME = "node-container"
-
     }
 
     stages {
-
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/mayurmwagh/node-app.git'
-            }
-        }
 
         stage('Verify Environment') {
             steps {
@@ -56,7 +46,7 @@ pipeline {
             steps {
                 sh '''
                 docker build -f dockerfile \
-                -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                -t ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER} .
                 '''
             }
         }
@@ -82,7 +72,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 sh '''
-                docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                docker push ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
                 '''
             }
         }
@@ -95,13 +85,12 @@ pipeline {
                 docker run -d \
                 --name ${CONTAINER_NAME} \
                 -p 3000:3000 \
-                ${IMAGE_NAME}:${BUILD_NUMBER}
+                ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
                 '''
             }
         }
     }
-
-
+}
 
 
 
