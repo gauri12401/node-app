@@ -1,32 +1,17 @@
 pipeline {
 
-    agent {
-        label 'agentt'
-    }
+    agent any
 
     environment {
         DOCKER_USER = "gauri128"
         DOCKER_REPO = "node-app"
-        CONTAINER_NAME = "node-container"
     }
 
     stages {
 
-        stage('Verify Environment') {
+        stage('Clone') {
             steps {
-                sh '''
-                echo "Node Version:"
-                node -v
-
-                echo "NPM Version:"
-                npm -v
-
-                echo "Git Version:"
-                git --version
-
-                echo "Docker Version:"
-                docker --version
-                '''
+                checkout scm
             }
         }
 
@@ -45,8 +30,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                docker build -f dockerfile \
-                -t ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER} .
+                docker build -t ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER} .
                 '''
             }
         }
@@ -64,34 +48,42 @@ pipeline {
                     echo "$DOCKER_PASSWORD" | docker login \
                     -u "$DOCKER_USERNAME" \
                     --password-stdin
+
+                    docker push ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
                     '''
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Configure EKS') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds']
+                ]) {
+                    sh '''
+                    aws eks update-kubeconfig \
+                    --name demo-riyacluster \
+                    --region ap-south-1
+
+                    kubectl get nodes
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
             steps {
                 sh '''
-                docker push ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
+                sed -i "s|IMAGE_NAME|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" deployment.yaml
+
+                kubectl apply -f deployment.yaml
                 '''
             }
         }
 
-        stage('Deploy Container') {
-            steps {
-                sh '''
-                docker rm -f ${CONTAINER_NAME} || true
-
-                docker run -d \
-                --name ${CONTAINER_NAME} \
-                -p 3000:3000 \
-                ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
-                '''
-            }
-        }
     }
 }
-
 
 
 
