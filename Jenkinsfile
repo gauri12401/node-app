@@ -9,7 +9,7 @@ pipeline {
 
     stages {
 
-        stage('Clone') {
+        stage('Clone Repository') {
             steps {
                 checkout scm
             }
@@ -35,7 +35,7 @@ pipeline {
             }
         }
 
-        stage('Docker Login') {
+        stage('Docker Login & Push') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -72,19 +72,23 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
                 sed -i "s|IMAGE_NAME|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" deployment.yaml
 
                 kubectl apply -f deployment.yaml
+
+                echo "========= Image Used in Deployment ========="
+                cat deployment.yaml | grep image
+
+                kubectl get deployments
+                kubectl get pods
                 '''
             }
         }
-
     }
 }
-
 
 
 
