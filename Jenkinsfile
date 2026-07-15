@@ -5,6 +5,8 @@ pipeline {
     environment {
         DOCKER_USER = "gauri128"
         DOCKER_REPO = "node-app"
+        CLUSTER_NAME = "demo-riicluster"
+        AWS_REGION = "ap-south-1"
     }
 
     stages {
@@ -55,40 +57,37 @@ pipeline {
             }
         }
 
-        stage('Configure EKS') {
+        stage('Deploy to Amazon EKS') {
             steps {
                 withCredentials([
                     [$class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds']
                 ]) {
                     sh '''
-                    aws eks update-kubeconfig \
-                    --name demo-riicluster \
-                    --region ap-south-1
+                    echo "========== Configuring EKS =========="
 
+                    aws eks update-kubeconfig \
+                    --name ${CLUSTER_NAME} \
+                    --region ${AWS_REGION}
+
+                    echo "========== Cluster Nodes =========="
                     kubectl get nodes
+
+                    echo "========== Updating Deployment Image =========="
+
+                    sed -i "s|IMAGE_NAME|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" deployment.yaml
+
+                    echo "========== Applying Deployment =========="
+                    kubectl apply -f deployment.yaml
+
+                    echo "========== Image Used =========="
+                    cat deployment.yaml | grep image
                     '''
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                sed -i "s|IMAGE_NAME|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" deployment.yaml
-
-                kubectl apply -f deployment.yaml
-
-                echo "========= Image Used in Deployment ========="
-                cat deployment.yaml | grep image
-
-                kubectl get deployments
-                kubectl get pods
-                '''
-            }
-        }
     }
 }
-
 
 
