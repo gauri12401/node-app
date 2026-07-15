@@ -63,7 +63,7 @@ pipeline {
                 ]) {
                     sh '''
                     aws eks update-kubeconfig \
-                    --name demo-riyacluster \
+                    --name demo-riicluster \
                     --region ap-south-1
 
                     kubectl get nodes
