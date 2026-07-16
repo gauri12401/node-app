@@ -5,7 +5,7 @@ pipeline {
     environment {
         DOCKER_USER = "gauri128"
         DOCKER_REPO = "node-app"
-        CLUSTER_NAME = "demo-riicluster"
+        CLUSTER_NAME = "demo-ekscluster1"
         AWS_REGION = "ap-south-1"
     }
 
