@@ -3,10 +3,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = "gauri128"
-        DOCKER_REPO = "node-app"
-        CLUSTER_NAME = "demo-ekscluster1"
-        AWS_REGION = "ap-south-1"
+
+        AWS_ACCOUNT_ID = "048674616992"
+        AWS_REGION     = "ap-south-1"
+        ECR_REPO       = "node-app"
+        CLUSTER_NAME   = "demo-ekscluster1"
+
+        IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
     }
 
     stages {
@@ -32,33 +35,60 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                docker build -t ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER} .
+                echo "========== Building Docker Image =========="
+
+                docker build -t ${ECR_REPO}:${BUILD_NUMBER} .
                 '''
             }
         }
 
-        stage('Docker Login & Push') {
+        stage('Login to Amazon ECR') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'docker-hub',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
-                    sh '''
-                    echo "$DOCKER_PASSWORD" | docker login \
-                    -u "$DOCKER_USERNAME" \
-                    --password-stdin
 
-                    docker push ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds']
+                ]) {
+
+                    sh '''
+                    echo "========== Login to Amazon ECR =========="
+
+                    aws ecr get-login-password \
+                    --region ${AWS_REGION} | docker login \
+                    --username AWS \
+                    --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
                     '''
                 }
             }
         }
 
-        stage('Deploy to Amazon EKS') {
+        stage('Tag Docker Image') {
             steps {
+
+                sh '''
+                echo "========== Tagging Docker Image =========="
+
+                docker tag ${ECR_REPO}:${BUILD_NUMBER} \
+                ${IMAGE_URI}:${BUILD_NUMBER}
+                '''
+            }
+        }
+
+        stage('Push Docker Image to Amazon ECR') {
+            steps {
+
+                sh '''
+                echo "========== Pushing Image to Amazon ECR =========="
+
+                docker push ${IMAGE_URI}:${BUILD_NUMBER}
+                '''
+            }
+        }
+
+        stage('Deploy to Amazon EKS') {
+
+            steps {
+
                 withCredentials([
                     [$class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds']
@@ -72,11 +102,12 @@ pipeline {
                     --region ${AWS_REGION}
 
                     echo "========== Cluster Nodes =========="
+
                     kubectl get nodes
 
                     echo "========== Updating Deployment Image =========="
 
-                    sed -i "s|IMAGE_NAME|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" deployment.yaml
+                    sed -i "s|IMAGE_NAME|${IMAGE_URI}:${BUILD_NUMBER}|g" deployment.yaml
 
                     echo "========== Applying Deployment =========="
 
@@ -97,20 +128,22 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
 
         always {
-            echo '========== Pipeline Execution Completed =========='
+            echo "========== Pipeline Execution Completed =========="
         }
 
         success {
-            echo 'Application Successfully Deployed to Amazon EKS.'
+            echo "Application Successfully Deployed to Amazon EKS using Amazon ECR."
         }
 
         failure {
-            echo 'Pipeline Failed. Please Check Jenkins Console Output.'
+            echo "Pipeline Failed. Please Check Jenkins Console Output."
         }
     }
+
 }
