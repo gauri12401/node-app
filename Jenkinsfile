@@ -5,7 +5,7 @@ pipeline {
     environment {
         DOCKER_USER = "gauri128"
         DOCKER_REPO = "node-app"
-        CLUSTER_NAME = "demo-ekscluster1"
+        CLUSTER_NAME = "demo-riicluster"
         AWS_REGION = "ap-south-1"
     }
 
@@ -90,7 +90,7 @@ pipeline {
 
                     cat deployment.yaml | grep image
 
-                    echo "========== Exposed Service =========="
+                    echo "========== Services =========="
 
                     kubectl get svc
                     '''
@@ -111,10 +111,6 @@ pipeline {
 
         failure {
             echo 'Pipeline Failed. Please Check Jenkins Console Output.'
-        }
-
-        cleanup {
-            cleanWs()
         }
     }
 }
