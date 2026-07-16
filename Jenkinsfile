@@ -5,7 +5,7 @@ pipeline {
     environment {
         DOCKER_USER = "gauri128"
         DOCKER_REPO = "node-app"
-        CLUSTER_NAME = "demo-riicluster"
+        CLUSTER_NAME = "demo-ekscluster1"
         AWS_REGION = "ap-south-1"
     }
 
@@ -63,6 +63,7 @@ pipeline {
                     [$class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds']
                 ]) {
+
                     sh '''
                     echo "========== Configuring EKS =========="
 
@@ -78,16 +79,42 @@ pipeline {
                     sed -i "s|IMAGE_NAME|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" deployment.yaml
 
                     echo "========== Applying Deployment =========="
+
                     kubectl apply -f deployment.yaml
 
+                    echo "========== Applying Service =========="
+
+                    kubectl apply -f service.yaml
+
                     echo "========== Image Used =========="
+
                     cat deployment.yaml | grep image
+
+                    echo "========== Exposed Service =========="
+
+                    kubectl get svc
                     '''
                 }
             }
         }
+    }
 
+    post {
+
+        always {
+            echo '========== Pipeline Execution Completed =========='
+        }
+
+        success {
+            echo 'Application Successfully Deployed to Amazon EKS.'
+        }
+
+        failure {
+            echo 'Pipeline Failed. Please Check Jenkins Console Output.'
+        }
+
+        cleanup {
+            cleanWs()
+        }
     }
 }
-
-

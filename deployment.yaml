@@ -3,6 +3,8 @@ kind: Deployment
 
 metadata:
   name: node-app-deployment
+  labels:
+    app: node-app
 
 spec:
   replicas: 2
